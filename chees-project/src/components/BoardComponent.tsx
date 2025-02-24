@@ -1,80 +1,101 @@
-import React, { FC, useEffect, useState } from 'react'
+import React, { FC, useState } from 'react'
 import { Board } from '../models/Board'
 import { Cell } from '../models/Cell'
+import { Colors } from '../models/Colors'
 import { Player } from '../models/Player'
 import CellComponent from './CellComponent'
 
 interface BoardProps {
-  board: Board
-  setBoard: (board: Board) => void
-  currentPlayer: Player | null
-  isMyTurn: boolean
-  makeMove: (newBoard: Board) => void // Добавляем makeMove в пропсы
+	board: Board
+	currentPlayer: Player | null
+	isMyTurn: boolean
+	makeMove: (newBoard: Board) => void
+	playerColor: Colors
 }
 
-const BoardComponent: FC<BoardProps> = ({ board, setBoard, currentPlayer, isMyTurn, makeMove }) => {
-  const [selectedCell, setSelectedCell] = useState<Cell | null>(null)
+const BoardComponent: FC<BoardProps> = ({
+	board,
+	currentPlayer,
+	isMyTurn,
+	makeMove,
+	playerColor,
+}) => {
+	const [selectedCell, setSelectedCell] = useState<Cell | null>(null)
+	const [highlightedCells, setHighlightedCells] = useState<Cell[]>([])
 
-  function click(cell: Cell) {
-    if (!isMyTurn) return
+	function click(cell: Cell) {
+		if (!isMyTurn) return
 
-    if (selectedCell && selectedCell !== cell && selectedCell.figure?.canMove(cell)) {
-      console.log('Фигура перемещена')
+		if (
+			selectedCell &&
+			selectedCell !== cell &&
+			selectedCell.figure?.canMove(cell)
+		) {
+			console.log('Фигура перемещена')
 
-      // Перемещаем фигуру
-      selectedCell.moveFigure(cell)
-      setSelectedCell(null)
+			selectedCell.moveFigure(cell)
+			setSelectedCell(null)
+			setHighlightedCells([])
 
-      // Обновляем доску
-      const newBoard = board.getCopyBoard()
-      setBoard(newBoard)
+			const newBoard = board.getCopyBoard()
 
-      // Отправляем новый ход на сервер
-      makeMove(newBoard) // Вызываем makeMove только после успешного перемещения
-    } else {
-      console.log('Выбрана фигура')
+			// Отправляем новый ход на сервер
+			makeMove(newBoard)
+		} else {
+			console.log('Выбрана фигура')
 
-      if (cell.figure?.color === currentPlayer?.color) {
-        setSelectedCell(cell)
-      }
-    }
-  }
+			if (cell.figure?.color === currentPlayer?.color) {
+				setSelectedCell(cell)
+				highlightCells(cell)
+			}
+		}
+	}
 
-  useEffect(() => {
-    highlightCells()
-  }, [selectedCell])
+	function highlightCells(cell: Cell) {
+		const highlightedCells = []
 
-  function highlightCells() {
-    board.highlightCells(selectedCell)
-    updateBoard()
-  }
+		for (let i = 0; i < board.cells.length; i++) {
+			const row = board.cells[i]
+			for (let j = 0; j < row.length; j++) {
+				const target = row[j]
+				if (cell.figure?.canMove(target)) {
+					highlightedCells.push(target)
+				}
+			}
+		}
 
-  function updateBoard() {
-    const newBoard = board.getCopyBoard()
-    setBoard(newBoard)
-  }
+		setHighlightedCells(highlightedCells)
+	}
 
-  return (
-    <div>
-      <h3>Текущий игрок: {currentPlayer?.color}</h3>
-      {!isMyTurn && <div className="turn-message">Ожидайте хода соперника...</div>}
-      <div className={`board ${isMyTurn ? '' : 'disabled'}`}>
-        {board.cells.map((row, index) => (
-          <React.Fragment key={index}>
-            {row.map((cell) => (
-              <CellComponent
-                click={click}
-                cell={cell}
-                key={cell.id}
-                selected={cell.x === selectedCell?.x && cell.y === selectedCell?.y}
-                isMyTurn={isMyTurn}
-              />
-            ))}
-          </React.Fragment>
-        ))}
-      </div>
-    </div>
-  )
+	const isBlackPlayer = playerColor === Colors.BLACK
+	return (
+		<div>
+			<h3>Текущий игрок: {currentPlayer?.color}</h3>
+			{!isMyTurn && (
+				<div className='turn-message'>Ожидайте хода соперника...</div>
+			)}
+			<div className={`board ${isMyTurn ? '' : 'disabled'}`}>
+				{(isBlackPlayer ? board.cells.slice().reverse() : board.cells).map(
+					(row, index) => (
+						<React.Fragment key={index}>
+							{row.map(cell => (
+								<CellComponent
+									click={click}
+									cell={cell}
+									key={cell.id}
+									selected={
+										cell.x === selectedCell?.x && cell.y === selectedCell?.y
+									}
+									highlighted={highlightedCells.includes(cell)}
+									isMyTurn={isMyTurn}
+								/>
+							))}
+						</React.Fragment>
+					)
+				)}
+			</div>
+		</div>
+	)
 }
 
 export default BoardComponent
