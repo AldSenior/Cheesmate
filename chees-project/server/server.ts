@@ -4,7 +4,6 @@ import http from 'http'
 import { Server } from 'socket.io'
 import { v4 as uuidv4 } from 'uuid'
 import { Colors } from './Colors'
-
 const app = express()
 app.use(cors())
 
