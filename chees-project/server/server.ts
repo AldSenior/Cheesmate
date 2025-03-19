@@ -21,7 +21,7 @@ interface Room {
 	players: {
 		[key: string]: 'white' | 'black'
 	}
-	boardState: any
+	boardState: unknown
 	currentPlayer: 'white' | 'black'
 }
 
@@ -34,7 +34,7 @@ app.get('/rooms', (req, res) => {
 	res.json(publicRooms)
 })
 
-io.on('connection', (socket) => {
+io.on('connection', socket => {
 	console.log(`New connection: ${socket.id}`)
 
 	let currentRoomId: string | null = null
@@ -46,7 +46,7 @@ io.on('connection', (socket) => {
 		io.emit('roomsList', publicRooms)
 	}
 
-	socket.on('createRoom', (initialBoardState) => {
+	socket.on('createRoom', initialBoardState => {
 		const roomId = uuidv4()
 		const newRoom: Room = {
 			id: roomId,
@@ -96,13 +96,14 @@ io.on('connection', (socket) => {
 		room.boardState = newBoardState
 
 		// Меняем текущего игрока
-		room.currentPlayer = room.currentPlayer === Colors.WHITE ? Colors.BLACK : Colors.WHITE
+		room.currentPlayer =
+			room.currentPlayer === Colors.WHITE ? Colors.BLACK : Colors.WHITE
 
 		// Отправляем обновленное состояние доски и текущего игрока всем игрокам в комнате
 		io.to(roomId).emit('moveMade', newBoardState, room.currentPlayer)
 	})
 
-	socket.on('leaveRoom', (roomId) => {
+	socket.on('leaveRoom', roomId => {
 		if (roomId) {
 			socket.leave(roomId)
 			const room = rooms.get(roomId)
@@ -116,6 +117,9 @@ io.on('connection', (socket) => {
 			}
 			sendRoomsList()
 		}
+	})
+	socket.on('gameOver', (roomId, winner) => {
+		io.to(roomId).emit('gameOver', winner) // Уведомляем всех игроков в комнате
 	})
 
 	socket.on('disconnect', () => {
