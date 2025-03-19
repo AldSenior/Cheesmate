@@ -157,7 +157,7 @@ export class Board {
 					: null
 			})
 			.filter((figure): figure is Figure => figure !== null) // Убираем null из массива
-		board.lostWhiteFigures = json.lostBlackFigures
+		board.lostWhiteFigures = json.lostWhiteFigures
 			.map(figureData => {
 				const FigureClass = figureClasses[figureData.type]
 				return FigureClass
