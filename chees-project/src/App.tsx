@@ -20,7 +20,7 @@ type Room = {
 	id: string
 }
 
-const socket: Socket = io('http://localhost:8080')
+const socket: Socket = io('https://cheesmate-1.onrender.com')
 
 const App = () => {
 	const [board, setBoard] = useState<Board>(new Board())
