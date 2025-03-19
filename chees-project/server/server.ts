@@ -1,15 +1,21 @@
 import cors from 'cors'
 import express from 'express'
 import http from 'http'
+import path from 'path' // Импортируем модуль path для работы с путями
 import { Server } from 'socket.io'
 import { v4 as uuidv4 } from 'uuid'
+
 const app = express()
 app.use(cors())
+
+// Обслуживание статических файлов из папки dist
+app.use(express.static(path.join(__dirname, '../dist')))
 
 const Colors = {
 	WHITE: 'white',
 	BLACK: 'black',
 }
+
 const server = http.createServer(app)
 const io = new Server(server, {
 	cors: {
@@ -34,6 +40,11 @@ app.get('/rooms', (req, res) => {
 		.filter(room => Object.keys(room.players).length < 2)
 		.map(room => ({ id: room.id }))
 	res.json(publicRooms)
+})
+
+// Все остальные запросы перенаправляются на index.html (для SPA)
+app.get('*', (req, res) => {
+	res.sendFile(path.join(__dirname, '../dist/index.html'))
 })
 
 io.on('connection', socket => {
@@ -120,6 +131,7 @@ io.on('connection', socket => {
 			sendRoomsList()
 		}
 	})
+
 	socket.on('gameOver', (roomId, winner) => {
 		io.to(roomId).emit('gameOver', winner) // Уведомляем всех игроков в комнате
 	})
@@ -139,6 +151,7 @@ io.on('connection', socket => {
 		}
 	})
 })
+
 const PORT = process.env.PORT || 8080
 server.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`)
