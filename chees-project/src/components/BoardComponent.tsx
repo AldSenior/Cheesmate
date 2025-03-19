@@ -94,7 +94,7 @@ const BoardComponent: FC<BoardProps> = ({
 
 	const isBlackPlayer = playerColor === Colors.BLACK
 	return (
-		<div>
+		<div className='flex justify-center items-center flex-col'>
 			<h3>Текущий игрок: {currentPlayer?.color}</h3>
 			{gameOverMessage && (
 				<div className='game-over-message'>{gameOverMessage}</div>
