@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Cell } from './Cell'
 import { Colors } from './Colors'
 import { Bishop } from './figures/Bishop'
