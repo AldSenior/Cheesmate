@@ -50,3 +50,24 @@
 	margin-left: 50px;
 	background-color: lightgray;
 }
+@media (max-width: 768px) {
+	.board {
+		width: calc(40px * 8); /* Уменьшаем размер доски */
+		height: calc(40px * 8);
+	}
+
+	.cell {
+		width: 40px; /* Уменьшаем размер клетки */
+		height: 40px;
+	}
+
+	.cell img {
+		width: 32px; /* Уменьшаем размер фигур */
+		height: 32px;
+	}
+
+	.lost {
+		margin-left: 20px; /* Уменьшаем отступ для мобильных */
+		padding: 15px;
+	}
+}
