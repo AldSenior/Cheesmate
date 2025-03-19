@@ -4,32 +4,39 @@ import './App.css'
 import BoardComponent from './components/BoardComponent'
 import LostFigures from './components/LostFigures'
 import Timer from './components/Timer'
-import { Board } from './models/Board'
+import { Board, BoardData } from './models/Board'
 import { Colors } from './models/Colors'
 import { Player } from './models/Player'
 
+// Тип для данных начала игры
 type GameStartData = {
 	roomId: string
-	boardState: Board
+	boardState: BoardData
 	playerColor: Colors
+}
+
+// Тип для комнаты
+type Room = {
+	id: string
 }
 
 const socket: Socket = io('http://localhost:8080')
 
 const App = () => {
-	const [board, setBoard] = useState(new Board())
-	const [whitePlayer] = useState(new Player(Colors.WHITE))
-	const [blackPlayer] = useState(new Player(Colors.BLACK))
+	const [board, setBoard] = useState<Board>(new Board())
+	const [whitePlayer] = useState<Player>(new Player(Colors.WHITE))
+	const [blackPlayer] = useState<Player>(new Player(Colors.BLACK))
 	const [currentPlayer, setCurrentPlayer] = useState<Player | null>(whitePlayer)
 	const [currentRoom, setCurrentRoom] = useState<string | null>(null)
 	const [playerColor, setPlayerColor] = useState<Colors | null>(null)
-	const [roomsList, setRoomsList] = useState<{ id: string }[]>([])
+	const [roomsList, setRoomsList] = useState<Room[]>([])
 	const [gameOverMessage, setGameOverMessage] = useState<string>('')
 
 	useEffect(() => {
 		console.log('Initializing game...')
 		restart()
 
+		// Обработка начала игры
 		socket.on('gameStart', (data: GameStartData) => {
 			console.log('Game started:', data)
 			setCurrentRoom(data.roomId)
@@ -38,9 +45,10 @@ const App = () => {
 			setGameOverMessage('')
 		})
 
+		// Обработка хода
 		socket.on(
 			'moveMade',
-			(newBoardState: Board, currentPlayerColor: Colors) => {
+			(newBoardState: BoardData, currentPlayerColor: Colors) => {
 				console.log('Move made by:', currentPlayerColor)
 				const newBoard = Board.fromJSON(newBoardState)
 				setBoard(newBoard)
@@ -48,7 +56,7 @@ const App = () => {
 					currentPlayerColor === Colors.WHITE ? whitePlayer : blackPlayer
 				setCurrentPlayer(nextPlayer)
 
-				// Проверка мата для игрока, который только что получил ход
+				// Проверка мата
 				const enemyColor =
 					currentPlayerColor === Colors.WHITE ? Colors.BLACK : Colors.WHITE
 				console.log('Checking for checkmate for:', enemyColor)
@@ -63,6 +71,7 @@ const App = () => {
 			}
 		)
 
+		// Обработка завершения игры
 		socket.on('gameOver', (winner: Colors) => {
 			console.log('Game over received, winner:', winner)
 			if (winner === playerColor) {
@@ -76,21 +85,25 @@ const App = () => {
 			}, 5000)
 		})
 
-		socket.on('roomsList', (rooms: { id: string }[]) => {
+		// Обработка списка комнат
+		socket.on('roomsList', (rooms: Room[]) => {
 			console.log('Rooms list updated:', rooms)
 			setRoomsList(rooms)
 		})
 
+		// Обработка присоединения соперника
 		socket.on('opponentJoined', () => {
 			console.log('Opponent joined!')
 			alert('Соперник присоединился! Игра начинается!')
 		})
 
+		// Обработка отключения соперника
 		socket.on('opponentDisconnected', () => {
 			console.log('Opponent disconnected!')
 			handleDisconnect()
 		})
 
+		// Очистка listeners при размонтировании
 		return () => {
 			console.log('Cleaning up socket listeners...')
 			socket.off('gameStart')
@@ -102,7 +115,8 @@ const App = () => {
 		}
 	}, [playerColor])
 
-	function restart() {
+	// Перезапуск игры
+	function restart(): void {
 		console.log('Restarting game...')
 		const newBoard = new Board()
 		newBoard.initCells()
@@ -112,7 +126,8 @@ const App = () => {
 		setCurrentPlayer(whitePlayer)
 	}
 
-	function handleGameOver(winner: Colors) {
+	// Обработка завершения игры
+	function handleGameOver(winner: Colors): void {
 		console.log('Game over detected, winner:', winner)
 		if (winner === playerColor) {
 			setGameOverMessage('Вы победили! Мат!')
@@ -121,18 +136,21 @@ const App = () => {
 		}
 	}
 
-	function handleCreateRoom() {
+	// Создание комнаты
+	function handleCreateRoom(): void {
 		console.log('Creating new room...')
 		restart()
 		socket.emit('createRoom', board.toJSON())
 	}
 
-	function handleJoinRoom(roomId: string) {
+	// Присоединение к комнате
+	function handleJoinRoom(roomId: string): void {
 		console.log('Joining room:', roomId)
 		socket.emit('joinRoom', roomId)
 	}
 
-	function handleDisconnect() {
+	// Отключение от комнаты
+	function handleDisconnect(): void {
 		console.log('Disconnecting from room...')
 		socket.emit('leaveRoom', currentRoom)
 		setCurrentRoom(null)
@@ -141,13 +159,14 @@ const App = () => {
 		restart()
 	}
 
-	function setBoardAndMakeMove(newBoard: Board) {
+	// Установка доски и выполнение хода
+	function setBoardAndMakeMove(newBoard: Board): void {
 		if (gameOverMessage) {
 			console.log('Game over, ignoring move')
 			return
 		}
 
-		// Проверка мата для противника после нашего хода
+		// Проверка мата для противника
 		const enemyColor =
 			playerColor === Colors.WHITE ? Colors.BLACK : Colors.WHITE
 		console.log('Checking for checkmate for:', enemyColor)

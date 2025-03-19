@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Cell } from './Cell'
 import { Colors } from './Colors'
 import { Bishop } from './figures/Bishop'
@@ -8,6 +9,34 @@ import { Pawn } from './figures/Pawn'
 import { Queen } from './figures/Queen'
 import { Rook } from './figures/Rook'
 
+interface CellData {
+	x: number
+	y: number
+	color: Colors
+	figure: FigureData | null
+}
+
+interface FigureData {
+	type: string
+	color: Colors
+}
+
+export interface BoardData {
+	cells: CellData[][]
+	lostBlackFigures: FigureData[]
+	lostWhiteFigures: FigureData[]
+}
+
+type FigureConstructor = new (color: Colors, cell: Cell) => Figure
+
+const figureClasses: Record<string, FigureConstructor> = {
+	Pawn: Pawn,
+	Bishop: Bishop,
+	King: King,
+	Knight: Knight,
+	Queen: Queen,
+	Rook: Rook,
+}
 export class Board {
 	cells: Cell[][] = []
 	lostBlackFigures: Figure[] = []
@@ -66,7 +95,7 @@ export class Board {
 	public getCell(x: number, y: number) {
 		return this.cells[y][x]
 	}
-	toJSON() {
+	toJSON(): BoardData {
 		return {
 			cells: this.cells.map(row =>
 				row.map(cell => ({
@@ -91,10 +120,10 @@ export class Board {
 			})),
 		}
 	}
-	static fromJSON(json: any): Board {
+	static fromJSON(json: BoardData): Board {
 		const board = new Board()
-		board.cells = json.cells.map((row: any) =>
-			row.map((cellData: any) => {
+		board.cells = json.cells.map(row =>
+			row.map(cellData => {
 				const cell = new Cell(
 					board,
 					cellData.x,
@@ -118,38 +147,28 @@ export class Board {
 				return cell
 			})
 		)
-		board.lostBlackFigures = json.lostBlackFigures.map((figureData: any) => {
-			const figureClass = {
-				Pawn: Pawn,
-				Bishop: Bishop,
-				King: King,
-				Knight: Knight,
-				Queen: Queen,
-				Rook: Rook,
-			}[figureData.type]
-			return figureClass
-				? new figureClass(
-						figureData.color,
-						new Cell(board, 0, 0, Colors.WHITE, null)
-				  )
-				: null
-		})
-		board.lostWhiteFigures = json.lostWhiteFigures.map((figureData: any) => {
-			const figureClass = {
-				Pawn: Pawn,
-				Bishop: Bishop,
-				King: King,
-				Knight: Knight,
-				Queen: Queen,
-				Rook: Rook,
-			}[figureData.type]
-			return figureClass
-				? new figureClass(
-						figureData.color,
-						new Cell(board, 0, 0, Colors.WHITE, null)
-				  )
-				: null
-		})
+		board.lostBlackFigures = json.lostBlackFigures
+			.map(figureData => {
+				const FigureClass = figureClasses[figureData.type]
+				return FigureClass
+					? new FigureClass(
+							figureData.color,
+							new Cell(board, 0, 0, Colors.WHITE, null)
+					  )
+					: null
+			})
+			.filter((figure): figure is Figure => figure !== null) // Убираем null из массива
+		board.lostWhiteFigures = json.lostBlackFigures
+			.map(figureData => {
+				const FigureClass = figureClasses[figureData.type]
+				return FigureClass
+					? new FigureClass(
+							figureData.color,
+							new Cell(board, 0, 0, Colors.WHITE, null)
+					  )
+					: null
+			})
+			.filter((figure): figure is Figure => figure !== null) // Убираем null из массива
 		return board
 	}
 
