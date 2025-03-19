@@ -11,7 +11,7 @@
 		"build": "tsc -b && vite build",
 		"lint": "eslint .",
 		"preview": "vite preview",
-		"start-server": "npx ts-node server/server.ts"
+		"start-server": "npx tsx server/server.ts"
 	},
 	"dependencies": {
 		"@tailwindcss/vite": "^4.0.7",
