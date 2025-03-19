@@ -7,12 +7,4 @@ export default defineConfig({
 	build: {
 		sourcemap: true,
 	},
-	esbuild: {
-		// Отключаем проверку TypeScript
-		tsconfigRaw: {
-			compilerOptions: {
-				skipLibCheck: true,
-			},
-		},
-	},
 })

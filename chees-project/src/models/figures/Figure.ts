@@ -27,14 +27,29 @@ export class Figure {
 		this.name = FigureNames.FIGURE
 		this.id = Math.random()
 	}
+
+	/**
+	 * Клонирует фигуру.
+	 * @returns Новая фигура с теми же свойствами.
+	 */
 	clone(): Figure {
 		return new Figure(this.color, this.cell)
 	}
+
+	/**
+	 * Проверяет, может ли фигура переместиться на целевую клетку.
+	 * @param target Целевая клетка.
+	 * @returns true, если ход возможен, иначе false.
+	 */
 	canMove(target: Cell): boolean {
 		if (target.figure?.color === this.color) return false
-		// if (target.figure?.name === FigureNames.KING) return false
 		return true
 	}
 
-	moveFigure(target: Cell) {}
+	/**
+	 * Перемещает фигуру на целевую клетку.
+	 * @param _target Целевая клетка.
+	 */
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	moveFigure(_target: Cell): void {}
 }
