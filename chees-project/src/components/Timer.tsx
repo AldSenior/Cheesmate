@@ -14,8 +14,9 @@ const Timer: FC<TimerProps> = ({ currentPlayer, restart }) => {
 
 	useEffect(() => {
 		startTimer()
-	}, [currentPlayer])
+	}, [currentPlayer, startTimer])
 
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	function startTimer() {
 		if (timer.current) {
 			clearInterval(timer.current)
