@@ -110,9 +110,17 @@ const App = () => {
 			socket.off('opponentJoined')
 			socket.off('opponentDisconnected')
 		}
-	}, [playerColor])
+	}, [
+		blackPlayer,
+		currentRoom,
+		handleDisconnect,
+		playerColor,
+		restart,
+		whitePlayer,
+	])
 
 	// Перезапуск игры
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	function restart(): void {
 		console.log('Restarting game...')
 		const newBoard = new Board()
@@ -147,6 +155,7 @@ const App = () => {
 	}
 
 	// Отключение от комнаты
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	function handleDisconnect(): void {
 		console.log('Disconnecting from room...')
 		socket.emit('leaveRoom', currentRoom)
