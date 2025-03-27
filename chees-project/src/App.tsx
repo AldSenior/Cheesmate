@@ -3,7 +3,6 @@ import { io, Socket } from 'socket.io-client'
 import './App.css'
 import BoardComponent from './components/BoardComponent'
 import LostFigures from './components/LostFigures'
-import Timer from './components/Timer'
 import { Board, BoardData } from './models/Board'
 import { Colors } from './models/Colors'
 import { Player } from './models/Player'
@@ -216,7 +215,7 @@ const App = () => {
 			) : (
 				<div className='text-center'>
 					<div className='mb-4'>
-						<Timer restart={restart} currentPlayer={currentPlayer} />
+						{/* <Timer restart={restart} currentPlayer={currentPlayer} /> */}
 						<div className='text-xl mb-2'>Ваш цвет: {playerColor}</div>
 						<div className='text-sm text-gray-600'>Комната: {currentRoom}</div>
 
