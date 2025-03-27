@@ -1,15 +1,15 @@
-import { FC } from 'react'
+import React from 'react'
 import { Cell } from '../models/Cell'
 
 interface CellProps {
 	cell: Cell
 	selected: boolean
-	highlighted: boolean // Новый пропс для подсветки
+	highlighted: boolean
 	click: (cell: Cell) => void
-	isMyTurn: boolean // Новый пропс
+	isMyTurn: boolean
 }
 
-const CellComponent: FC<CellProps> = ({
+const CellComponent: React.FC<CellProps> = ({
 	cell,
 	selected,
 	highlighted,
