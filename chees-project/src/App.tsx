@@ -110,14 +110,7 @@ const App = () => {
 			socket.off('opponentJoined')
 			socket.off('opponentDisconnected')
 		}
-	}, [
-		blackPlayer,
-		currentRoom,
-		handleDisconnect,
-		playerColor,
-		restart,
-		whitePlayer,
-	])
+	}, [])
 
 	// Перезапуск игры
 	// eslint-disable-next-line react-hooks/exhaustive-deps
