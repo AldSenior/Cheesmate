@@ -49,7 +49,6 @@ const App = () => {
 		socket.on(
 			'moveMade',
 			(newBoardState: BoardData, currentPlayerColor: Colors) => {
-				console.log('Move made by:', currentPlayerColor)
 				const newBoard = Board.fromJSON(newBoardState)
 				setBoard(newBoard)
 				const nextPlayer =
@@ -59,9 +58,8 @@ const App = () => {
 				// Проверка мата
 				const enemyColor =
 					currentPlayerColor === Colors.WHITE ? Colors.BLACK : Colors.WHITE
-				console.log('Checking for checkmate for:', enemyColor)
+
 				const isMate = newBoard.isCheck(enemyColor)
-				console.log('Is checkmate:', isMate)
 
 				if (isMate) {
 					const winner = currentPlayerColor

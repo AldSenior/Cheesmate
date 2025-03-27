@@ -18,12 +18,17 @@ interface CellData {
 interface FigureData {
 	type: string
 	color: Colors
+	isFirstStep?: boolean
 }
 
 export interface BoardData {
 	cells: CellData[][]
 	lostBlackFigures: FigureData[]
 	lostWhiteFigures: FigureData[]
+	lastMove?: {
+		from: { x: number; y: number }
+		to: { x: number; y: number }
+	}
 }
 
 type FigureConstructor = new (color: Colors, cell: Cell) => Figure
@@ -36,19 +41,21 @@ const figureClasses: Record<string, FigureConstructor> = {
 	Queen: Queen,
 	Rook: Rook,
 }
+
 export class Board {
 	cells: Cell[][] = []
 	lostBlackFigures: Figure[] = []
 	lostWhiteFigures: Figure[] = []
+	lastMove: { from: Cell; to: Cell } | null = null
 
 	public initCells() {
 		for (let i = 0; i < 8; i++) {
 			const row: Cell[] = []
 			for (let j = 0; j < 8; j++) {
 				if ((i + j) % 2 !== 0) {
-					row.push(new Cell(this, j, i, Colors.BLACK, null)) // Черные ячейки
+					row.push(new Cell(this, j, i, Colors.BLACK, null))
 				} else {
-					row.push(new Cell(this, j, i, Colors.WHITE, null)) // белые
+					row.push(new Cell(this, j, i, Colors.WHITE, null))
 				}
 			}
 			this.cells.push(row)
@@ -57,27 +64,24 @@ export class Board {
 
 	public getCopyBoard(): Board {
 		const newBoard = new Board()
-
 		newBoard.cells = this.cells.map(row =>
-			row.map(
-				cell =>
-					new Cell(
-						newBoard,
-						cell.x,
-						cell.y,
-						cell.color,
-						cell.figure ? cell.figure.clone() : null
-					)
-			)
+			row.map(cell => {
+				const newCell = cell.clone(newBoard)
+				if (newCell.figure instanceof Pawn) {
+					const originalPawn = cell.figure as Pawn
+					newCell.figure.isFirstStep = originalPawn.isFirstStep
+				}
+				return newCell
+			})
 		)
-
-		newBoard.lostWhiteFigures = this.lostWhiteFigures.map(figure =>
-			figure.clone()
-		)
-		newBoard.lostBlackFigures = this.lostBlackFigures.map(figure =>
-			figure.clone()
-		)
-
+		newBoard.lostBlackFigures = [...this.lostBlackFigures]
+		newBoard.lostWhiteFigures = [...this.lostWhiteFigures]
+		newBoard.lastMove = this.lastMove
+			? {
+					from: newBoard.getCell(this.lastMove.from.x, this.lastMove.from.y),
+					to: newBoard.getCell(this.lastMove.to.x, this.lastMove.to.y),
+			  }
+			: null
 		return newBoard
 	}
 
@@ -94,7 +98,8 @@ export class Board {
 	public getCell(x: number, y: number) {
 		return this.cells[y][x]
 	}
-	toJSON(): BoardData {
+
+	public toJSON(): BoardData {
 		return {
 			cells: this.cells.map(row =>
 				row.map(cell => ({
@@ -105,6 +110,10 @@ export class Board {
 						? {
 								type: cell.figure.constructor.name,
 								color: cell.figure.color,
+								isFirstStep:
+									cell.figure instanceof Pawn
+										? (cell.figure as Pawn).isFirstStep
+										: undefined,
 						  }
 						: null,
 				}))
@@ -117,8 +126,15 @@ export class Board {
 				type: figure.constructor.name,
 				color: figure.color,
 			})),
+			lastMove: this.lastMove
+				? {
+						from: { x: this.lastMove.from.x, y: this.lastMove.from.y },
+						to: { x: this.lastMove.to.x, y: this.lastMove.to.y },
+				  }
+				: undefined,
 		}
 	}
+
 	static fromJSON(json: BoardData): Board {
 		const board = new Board()
 		board.cells = json.cells.map(row =>
@@ -131,21 +147,29 @@ export class Board {
 					null
 				)
 				if (cellData.figure) {
-					const figureClass = {
-						Pawn: Pawn,
-						Bishop: Bishop,
-						King: King,
-						Knight: Knight,
-						Queen: Queen,
-						Rook: Rook,
-					}[cellData.figure.type]
+					const figureClass = figureClasses[cellData.figure.type]
 					if (figureClass) {
-						cell.figure = new figureClass(cellData.figure.color, cell)
+						const figure = new figureClass(cellData.figure.color, cell)
+						if (
+							figure instanceof Pawn &&
+							cellData.figure.isFirstStep !== undefined
+						) {
+							figure.isFirstStep = cellData.figure.isFirstStep
+						}
+						cell.figure = figure
 					}
 				}
 				return cell
 			})
 		)
+
+		if (json.lastMove) {
+			board.lastMove = {
+				from: board.getCell(json.lastMove.from.x, json.lastMove.from.y),
+				to: board.getCell(json.lastMove.to.x, json.lastMove.to.y),
+			}
+		}
+
 		board.lostBlackFigures = json.lostBlackFigures
 			.map(figureData => {
 				const FigureClass = figureClasses[figureData.type]
@@ -156,7 +180,8 @@ export class Board {
 					  )
 					: null
 			})
-			.filter((figure): figure is Figure => figure !== null) // Убираем null из массива
+			.filter((figure): figure is Figure => figure !== null)
+
 		board.lostWhiteFigures = json.lostWhiteFigures
 			.map(figureData => {
 				const FigureClass = figureClasses[figureData.type]
@@ -167,7 +192,8 @@ export class Board {
 					  )
 					: null
 			})
-			.filter((figure): figure is Figure => figure !== null) // Убираем null из массива
+			.filter((figure): figure is Figure => figure !== null)
+
 		return board
 	}
 
@@ -209,128 +235,17 @@ export class Board {
 		new Rook(Colors.WHITE, this.getCell(7, 7))
 	}
 
-	public isCheck(color: Colors): boolean {
-		console.log(`[isCheck] Checking if ${color} king is in check`)
-
-		// 1. Находим клетку с королем
-		const kingCell = this.findKingCell(color)
-		if (!kingCell) {
-			console.log(`[isCheck] ${color} king not found!`)
-			return false
-		}
-
-		console.log(
-			`[isCheck] ${color} king found at (${kingCell.x},${kingCell.y})`
-		)
-
-		// 2. Определяем цвет противника
-		const enemyColor = color === Colors.WHITE ? Colors.BLACK : Colors.WHITE
-
-		// 3. Проверяем все фигуры противника
-		for (const row of this.cells) {
-			for (const cell of row) {
-				const figure = cell.figure
-
-				// Если фигура принадлежит противнику и может атаковать короля
-				if (figure && figure.color === enemyColor && figure.canMove(kingCell)) {
-					console.log(
-						`[isCheck] ${figure.constructor.name} at (${cell.x},${cell.y}) can attack the king!`
-					)
-					return true
-				}
-			}
-		}
-
-		// 4. Если ни одна фигура не атакует короля, шах отсутствует
-		console.log(`[isCheck] ${color} king is not in check`)
-		return false
-	}
-
-	public isCheckmate(color: Colors): boolean {
-		// 1. Проверяем, находится ли король под шахом
-		if (!this.isCheck(color)) {
-			console.log(`[isCheckmate] ${color} king is not in check. No checkmate.`)
-			return false
-		}
-
-		// 2. Проверяем все фигуры текущего игрока
-		for (const row of this.cells) {
-			for (const cell of row) {
-				if (cell.figure?.color === color) {
-					console.log(
-						`[isCheckmate] Checking ${cell.figure.constructor.name} at (${cell.x},${cell.y})`
-					)
-
-					// 3. Получаем все допустимые ходы для фигуры
-					const validMoves = this.getValidMovesForCell(cell)
-					if (validMoves.length > 0) {
-						console.log(
-							`[isCheckmate] Found ${validMoves.length} valid moves for ${cell.figure.constructor.name} at (${cell.x},${cell.y})`
-						)
-						console.log(
-							`[isCheckmate] Valid moves:`,
-							validMoves.map(m => `(${m.x},${m.y})`)
-						)
-						return false // Если есть хотя бы один допустимый ход, мата нет
-					}
-				}
-			}
-		}
-
-		// 4. Если ни одна фигура не может сделать ход, это мат
-		console.log(`[isCheckmate] No valid moves found for ${color}. Checkmate!`)
-		alert('чек')
-		return true
-	}
-	private getValidMovesForCell(cell: Cell): Cell[] {
-		const validMoves: Cell[] = []
-		const figure = cell.figure
-		if (!figure) {
-			console.log('No figure on cell, no valid moves')
-			return validMoves
-		}
-
-		console.log(
-			`Checking valid moves for ${figure.constructor.name} at (${cell.x},${cell.y})`
-		)
-
-		for (const row of this.cells) {
-			for (const target of row) {
-				if (figure.canMove(target)) {
-					// Создаем копию доски для проверки
-					const boardCopy = this.getCopyBoard()
-					const cellCopy = boardCopy.getCell(cell.x, cell.y)
-					const targetCopy = boardCopy.getCell(target.x, target.y)
-
-					cellCopy.moveFigure(targetCopy)
-					if (!boardCopy.isCheck(figure.color)) {
-						console.log(`Valid move to (${target.x},${target.y})`)
-						validMoves.push(target)
-					}
-				}
-			}
-		}
-		console.log(`Total valid moves: ${validMoves.length}`)
-		return validMoves
-	}
-
 	private findKingCell(color: Colors): Cell | null {
-		console.log(`[findKingCell] Searching for ${color} king`)
-
 		for (const row of this.cells) {
 			for (const cell of row) {
 				if (cell.figure instanceof King && cell.figure.color === color) {
-					console.log(
-						`[findKingCell] ${color} king found at (${cell.x},${cell.y})`
-					)
 					return cell
 				}
 			}
 		}
-
-		console.log(`[findKingCell] ${color} king not found!`)
 		return null
 	}
+
 	public addFigures() {
 		this.addPawns()
 		this.addKnights()
@@ -338,5 +253,59 @@ export class Board {
 		this.addBishops()
 		this.addQueens()
 		this.addRooks()
+	}
+
+	public isCheck(color: Colors): boolean {
+		const kingCell = this.findKingCell(color)
+		if (!kingCell) return false
+
+		for (const row of this.cells) {
+			for (const cell of row) {
+				const figure = cell.figure
+				if (figure && figure.color !== color && figure.canMove(kingCell)) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+
+	public isCheckmate(color: Colors): boolean {
+		if (!this.isCheck(color)) return false
+
+		for (const row of this.cells) {
+			for (const cell of row) {
+				if (cell.figure?.color === color) {
+					const moves = this.getValidMovesForCell(cell)
+					if (moves.length > 0) return false
+				}
+			}
+		}
+		return true
+	}
+
+	private getValidMovesForCell(cell: Cell): Cell[] {
+		const validMoves: Cell[] = []
+		const figure = cell.figure
+		if (!figure) return validMoves
+
+		for (const target of this.getAllCells()) {
+			if (figure.canMove(target)) {
+				const copyBoard = this.getCopyBoard()
+				const copyCell = copyBoard.getCell(cell.x, cell.y)
+				const copyTarget = copyBoard.getCell(target.x, target.y)
+
+				copyCell.moveFigure(copyTarget)
+
+				if (!copyBoard.isCheck(figure.color)) {
+					validMoves.push(target)
+				}
+			}
+		}
+		return validMoves
+	}
+
+	private getAllCells(): Cell[] {
+		return this.cells.flat()
 	}
 }

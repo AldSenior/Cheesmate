@@ -9,7 +9,7 @@ const app = express()
 app.use(cors())
 
 // Обслуживание статических файлов из папки dist
-app.use(express.static(path.join(__dirname, '../dist')))
+// app.use(express.static(path.join(__dirname, '../dist')))
 
 const Colors = {
 	WHITE: 'white',

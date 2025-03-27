@@ -1,6 +1,5 @@
-import { Board } from './Board'
 import { Colors } from './Colors'
-import { Figure } from './figures/Figure'
+import { Pawn } from './figures/Pawn'
 
 export class Cell {
 	readonly x: number
@@ -30,6 +29,7 @@ export class Cell {
 	isEmpty(): boolean {
 		return this.figure === null
 	}
+
 	isEnemy(target: Cell): boolean {
 		if (target.figure) {
 			return this.figure?.color !== target.figure.color
@@ -66,15 +66,7 @@ export class Cell {
 		}
 		return true
 	}
-	clone(board: Board): Cell {
-		return new Cell(
-			board,
-			this.x,
-			this.y,
-			this.color,
-			this.figure ? this.figure.clone() : null
-		)
-	}
+
 	isEmptyDiagonal(target: Cell): boolean {
 		const absX = Math.abs(target.x - this.x)
 		const absY = Math.abs(target.y - this.y)
@@ -90,6 +82,19 @@ export class Cell {
 		return true
 	}
 
+	// В методе clone класса Cell
+	clone(board: Board): Cell {
+		const newCell = new Cell(
+			board,
+			this.x,
+			this.y,
+			this.color,
+			this.figure ? this.figure.clone() : null
+		)
+		newCell.available = this.available
+		return newCell
+	}
+
 	setFigure(figure: Figure) {
 		this.figure = figure
 		this.figure.cell = this
@@ -101,14 +106,32 @@ export class Cell {
 			: this.board.lostWhiteFigures.push(figure)
 	}
 
-	moveFigure(target: Cell) {
-		if (this.figure && this.figure?.canMove(target)) {
-			this.figure.moveFigure(target)
-			if (target.figure) {
-				console.log(target.figure)
-				this.addLostFigure(target.figure)
+	// Cell.ts (исправленное перемещение)
+	public moveFigure(target: Cell): void {
+		this.board.lastMove = {
+			from: this,
+			to: target,
+		}
+
+		if (this.figure?.canMove(target)) {
+			// Логика взятия на проходе
+			if (
+				this.figure instanceof Pawn &&
+				target.isEmpty() &&
+				this.x !== target.x
+			) {
+				const dir = this.figure.color === Colors.BLACK ? 1 : -1
+				const capturedCell = this.board.getCell(target.x, target.y - dir)
+				if (capturedCell.figure) {
+					this.addLostFigure(capturedCell.figure)
+					capturedCell.figure = null
+					console.log(`[Cell] Взятие на проходе выполнено`)
+				}
 			}
-			target.setFigure(this.figure)
+
+			// Перемещение фигуры
+			target.setFigure(this.figure!)
+			this.figure!.moveFigure(target)
 			this.figure = null
 		}
 	}

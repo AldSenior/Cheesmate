@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+
 * {
 	margin: 0;
 	padding: 0;
@@ -15,24 +16,31 @@
 .board {
 	width: calc(64px * 8);
 	height: calc(64px * 8);
-	display: flex;
-	flex-wrap: wrap;
+	display: grid;
+	grid-template-columns: repeat(8, 1fr); /* Создаем 8 равных колонок */
+	grid-template-rows: repeat(8, 1fr); /* Создаем 8 равных рядов */
+	position: relative;
 }
+
 .cell {
-	width: 64px;
-	height: 64px;
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	width: 64px;
+	height: 64px;
+	position: relative;
 }
+
 .cell img {
 	width: 48px;
 	height: 48px;
 	position: relative;
 }
+
 .black {
 	background-color: deepskyblue;
 }
+
 .white {
 	background-color: #eed4ac;
 }
@@ -40,6 +48,7 @@
 .selected {
 	background-color: brown;
 }
+
 .available {
 	background-color: #22c022;
 }
@@ -50,12 +59,16 @@
 	margin-left: 50px;
 	background-color: lightgray;
 }
+
 @media (max-width: 768px) {
 	.board {
 		width: calc(40px * 8); /* Уменьшаем размер доски */
 		height: calc(40px * 8);
 	}
-
+	.bukvi {
+		width: 32px;
+		height: 32px;
+	}
 	.cell {
 		width: 40px; /* Уменьшаем размер клетки */
 		height: 40px;
@@ -70,4 +83,47 @@
 		margin-left: 20px; /* Уменьшаем отступ для мобильных */
 		padding: 15px;
 	}
+}
+
+.row-labels {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	margin-right: 10px;
+}
+
+.row-label {
+	height: 50px; /* Высота клетки */
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	padding-right: 5px;
+	font-weight: bold;
+}
+
+.column-labels {
+	display: flex;
+	justify-content: center;
+	margin-top: 10px;
+}
+
+.column-label {
+	width: 50px; /* Ширина клетки */
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: bold;
+}
+
+.board-content {
+	display: flex;
+	flex-direction: column;
+}
+.bukvi {
+	width: 64px;
+	height: 64px;
+	justify-content: center;
+	align-items: center;
+	display: flex;
+	text-align: center;
 }
