@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import React from 'react'
 import { Figure } from '../models/figures/Figure'
 
 interface LostFiguresProps {
@@ -6,14 +6,16 @@ interface LostFiguresProps {
 	figures: Figure[]
 }
 
-const LostFigures: FC<LostFiguresProps> = ({ title, figures }) => {
+const LostFigures: React.FC<LostFiguresProps> = ({ title, figures }) => {
 	return (
 		<div className='lost'>
 			<h3>{title}</h3>
 			{figures.map(figure => (
 				<div key={figure.id}>
 					{figure.name}{' '}
-					{figure.logo && <img width={20} height={20} src={figure.logo} />}
+					{figure.logo && (
+						<img width={20} height={20} src={figure.logo} alt={figure.name} />
+					)}
 				</div>
 			))}
 		</div>

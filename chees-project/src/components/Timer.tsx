@@ -1,4 +1,4 @@
-import { FC, useEffect, useRef, useState } from 'react'
+import { FC, useCallback, useEffect, useRef, useState } from 'react'
 import { Colors } from '../models/Colors'
 import { Player } from '../models/Player'
 
@@ -12,12 +12,15 @@ const Timer: FC<TimerProps> = ({ currentPlayer, restart }) => {
 	const [whiteTime, setWhiteTime] = useState(300)
 	const timer = useRef<null | ReturnType<typeof setInterval>>(null)
 
-	useEffect(() => {
-		startTimer()
-	}, [currentPlayer, startTimer])
+	const decrementBlackTimer = useCallback(() => {
+		setBlackTime(prev => prev - 1)
+	}, [])
 
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	function startTimer() {
+	const decrementWhiteTimer = useCallback(() => {
+		setWhiteTime(prev => prev - 1)
+	}, [])
+
+	const startTimer = useCallback(() => {
 		if (timer.current) {
 			clearInterval(timer.current)
 		}
@@ -26,14 +29,16 @@ const Timer: FC<TimerProps> = ({ currentPlayer, restart }) => {
 				? decrementWhiteTimer
 				: decrementBlackTimer
 		timer.current = setInterval(callback, 1000)
-	}
+	}, [currentPlayer, decrementBlackTimer, decrementWhiteTimer])
 
-	function decrementBlackTimer() {
-		setBlackTime(prev => prev - 1)
-	}
-	function decrementWhiteTimer() {
-		setWhiteTime(prev => prev - 1)
-	}
+	useEffect(() => {
+		startTimer()
+		return () => {
+			if (timer.current) {
+				clearInterval(timer.current)
+			}
+		}
+	}, [startTimer])
 
 	const handleRestart = () => {
 		setWhiteTime(300)

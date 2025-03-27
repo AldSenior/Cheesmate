@@ -46,7 +46,6 @@ const BoardComponent: FC<BoardProps> = ({
 	function click(cell: Cell) {
 		if (!isMyTurn || gameOverMessage) return
 
-		// Если выбрана клетка с фигурой и кликнули на другую клетку
 		if (
 			selectedCell &&
 			selectedCell !== cell &&
@@ -56,7 +55,6 @@ const BoardComponent: FC<BoardProps> = ({
 			const newSelectedCell = newBoard.getCell(selectedCell.x, selectedCell.y)
 			const newTargetCell = newBoard.getCell(cell.x, cell.y)
 
-			// Обработка взятия на проходе перед перемещением фигуры
 			if (
 				selectedCell.figure instanceof Pawn &&
 				cell.isEmpty() &&
@@ -65,7 +63,6 @@ const BoardComponent: FC<BoardProps> = ({
 				const direction = selectedCell.figure.color === Colors.BLACK ? 1 : -1
 				const capturedCell = newBoard.getCell(cell.x, cell.y - direction)
 
-				// Удаляем пешку, которая берется на проходе
 				if (capturedCell.figure) {
 					if (capturedCell.figure.color === Colors.BLACK) {
 						newBoard.lostBlackFigures.push(capturedCell.figure)
@@ -76,10 +73,8 @@ const BoardComponent: FC<BoardProps> = ({
 				}
 			}
 
-			// Перемещаем фигуру
 			newSelectedCell.moveFigure(newTargetCell)
 
-			// Проверка на мат
 			if (
 				newBoard.isCheckmate(
 					playerColor === Colors.WHITE ? Colors.BLACK : Colors.WHITE
@@ -88,15 +83,10 @@ const BoardComponent: FC<BoardProps> = ({
 				onGameOver(playerColor)
 			}
 
-			// Сбрасываем выделение
 			setSelectedCell(null)
 			setHighlightedCells([])
-
-			// Отправляем новый ход
 			makeMove(newBoard)
-		}
-		// Если кликнули на свою фигуру
-		else if (cell.figure?.color === currentPlayer?.color) {
+		} else if (cell.figure?.color === currentPlayer?.color) {
 			setSelectedCell(cell)
 			highlightCells(cell)
 		}
