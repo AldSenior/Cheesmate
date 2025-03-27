@@ -1,4 +1,6 @@
+import { Board } from './Board'
 import { Colors } from './Colors'
+import { Figure } from './figures/Figure'
 import { Pawn } from './figures/Pawn'
 
 export class Cell {
@@ -101,6 +103,7 @@ export class Cell {
 	}
 
 	addLostFigure(figure: Figure) {
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 		figure.color === Colors.BLACK
 			? this.board.lostBlackFigures.push(figure)
 			: this.board.lostWhiteFigures.push(figure)
